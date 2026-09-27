@@ -1,11 +1,15 @@
-# Builds the mod and publishes the jar as a GitHub release.
-# To make a release, set mod_version in gradle.properties and push a tag
-# named v<mod_version>, for example: git tag v0.6-26.3 && git push origin v0.6-26.3
+# Builds the mod and publishes the jar as a GitHub release tagged v<mod_version>.
+# Start it in one of these ways:
+# - Actions tab -> "build" -> "Run workflow" with "release" checked
+# - Actions tab -> "release" -> "Run workflow" (once this file is on the default branch)
+# - push a tag named v<mod_version>, for example: git tag v0.6-26.3 && git push origin v0.6-26.3
 
 name: release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: write
@@ -29,11 +33,12 @@ jobs:
         run: |
           prop() { grep "^$1=" gradle.properties | cut -d= -f2; }
           version=$(prop mod_version)
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match mod_version $version in gradle.properties"
             exit 1
           fi
           {
+            echo "RELEASE_TAG=v$version"
             echo "MOD_VERSION=$version"
             echo "MINECRAFT_VERSION=$(prop minecraft_version)"
             echo "LOADER_VERSION=$(prop loader_version)"
@@ -57,7 +62,7 @@ jobs:
 
           Put \`elytra-drag-$MOD_VERSION.jar\` in your \`mods\` folder.
           EOF
-          gh release create "$GITHUB_REF_NAME" "build/libs/elytra-drag-$MOD_VERSION.jar" \
+          gh release create "$RELEASE_TAG" "build/libs/elytra-drag-$MOD_VERSION.jar" \
             --target "$GITHUB_SHA" \
             --title "Elytra Drag $MOD_VERSION" \
             --notes-file release-notes.md
