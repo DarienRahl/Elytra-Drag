@@ -9,19 +9,14 @@ for j in $JARS; do unzip -Z1 "$j"; done | grep -iE '(Elytra|Wings|FireworkRocket
 EM=$(for j in $JARS; do unzip -Z1 "$j"; done | grep -E '/ElytraModel\.class$' | head -1 | sed 's/\.class$//; s#/#.#g')
 echo "### ElytraModel=$EM"
 p() { echo "### javap $*"; javap -p -cp "$CP" "$@" 2>&1; }
-p net.minecraft.world.entity.projectile.FireworkRocketEntity
-p net.minecraft.client.renderer.entity.state.HumanoidRenderState
-p net.minecraft.client.renderer.entity.state.EntityRenderState | grep -E 'ageInTicks|class'
-p net.minecraft.client.renderer.entity.player.AvatarRenderer | grep -E 'extractRenderState|class'
-p net.minecraft.world.entity.Avatar | grep -E 'class'
-p net.minecraft.world.entity.Entity | grep -E 'hurtMarked|fallDistance|isShiftKeyDown|DeltaMovement|markHurt|class '
-p net.minecraft.world.entity.LivingEntity | grep -E 'isFallFlying|markHurt|class '
-p net.minecraft.world.phys.Vec3 | grep -E ' scale\(| length\(| y;'
-p net.minecraft.server.players.PlayerList | grep -E 'getPlayers'
-p net.minecraft.server.level.ServerPlayer | grep -E 'class |hurtMarked|KnownMovement'
-echo "### ElytraModel bytecode"; javap -c -p -cp "$CP" "$EM" 2>&1 | head -120
-echo "### FireworkRocketEntity.tick bytecode"; javap -c -p -cp "$CP" net.minecraft.world.entity.projectile.FireworkRocketEntity 2>&1 | sed -n '/public void tick()/,/^$/p' | grep -E 'getfield|putfield|invoke|tick' | head -80
-echo "### AvatarRenderer.extractRenderState bytecode"; javap -c -p -cp "$CP" net.minecraft.client.renderer.entity.player.AvatarRenderer 2>&1 | sed -n '/public void extractRenderState(net.minecraft.world.entity.Avatar/,/^$/p' | grep -E 'invoke|putfield' | head -60
-echo "### HumanoidMobRenderer elytra"; javap -c -p -cp "$CP" net.minecraft.client.renderer.entity.HumanoidMobRenderer 2>&1 | grep -nE 'elytra|Elytra' | head -20
-echo "### WingsLayer usage of elytraRot"; for c in $(for j in $JARS; do unzip -Z1 "$j"; done | grep -E '/WingsLayer\.class$' | sed 's/\.class$//; s#/#.#g'); do javap -c -p -cp "$CP" "$c" 2>&1 | grep -nE 'setupAnim|elytra' | head; done
+p net.minecraft.world.entity.Entity | grep -E 'public (boolean|double|float|int) [a-zA-Z]+;|void markHurt|Impulse|needsSync|hurt'
+echo "### Entity.markHurt bytecode"; javap -c -p -cp "$CP" net.minecraft.world.entity.Entity 2>&1 | sed -n '/void markHurt()/,/^$/p'
+echo "### LivingEntity knockback bytecode"; javap -c -p -cp "$CP" net.minecraft.world.entity.LivingEntity 2>&1 | sed -n '/public void knockback(double, double, double)/,/^$/p' | grep -E 'field|invoke'
+echo "### LivingEntity markHurt"; javap -p -cp "$CP" net.minecraft.world.entity.LivingEntity 2>&1 | grep -E 'markHurt|hurt[A-Z]'
+echo "### ServerEntity sendChanges"; javap -c -p -cp "$CP" net.minecraft.server.level.ServerEntity 2>&1 | sed -n '/public void sendChanges()/,/^$/p' | grep -E 'Field net/minecraft/world/entity/Entity|MotionPacket|Method net/minecraft/world/entity/Entity' | head -40
+p net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket | grep -E 'ClientboundSetEntityMotionPacket\('
+p net.minecraft.server.level.ServerPlayer | grep -E ' connection;'
+p net.minecraft.server.network.ServerGamePacketListenerImpl | grep -E 'void send\('
+echo "### AvatarRenderer.extractRenderState bytecode"; javap -c -p -cp "$CP" net.minecraft.client.renderer.entity.player.AvatarRenderer 2>&1 | sed -n '/public void extractRenderState(AvatarlikeEntity/,/^$/p' | grep -E 'invoke|putfield' | head -60
+echo "### FireworkRocketEntity.tick tail"; javap -c -p -cp "$CP" net.minecraft.world.entity.projectile.FireworkRocketEntity 2>&1 | sed -n '/public void tick()/,/^$/p' | tail -25
 exit 0
