@@ -1,30 +1,31 @@
 package net.bl4st.elytradrag.mixin;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.projectile.FireworkRocketEntity;
+import net.bl4st.elytradrag.ElytraDrag;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin (FireworkRocketEntity.class)
-public class FireworkRocketEntitySuppressor {
+@Mixin(FireworkRocketEntity.class)
+public abstract class FireworkRocketEntitySuppressor {
 
     @Shadow
-    private int lifeTime;
+    private int lifetime;
 
     @Shadow
-    private LivingEntity shooter;
+    private LivingEntity attachedToEntity;
 
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void tick(CallbackInfo ci)
+    /**
+     * Ends the rocket propulsion as soon as the
+     * player boosted by it starts slowing down
+     */
+    @Inject(method = "tick()V", at = @At("HEAD"))
+    private void elytradrag$suppressPropulsion(CallbackInfo ci)
     {
-        if(shooter != null)
-        {
-            if(shooter.isGliding() && shooter.isSneaking())
-                lifeTime = 0;
-        }
+        if (attachedToEntity != null && ElytraDrag.IsDragging(attachedToEntity))
+            lifetime = 0;
     }
 }
-

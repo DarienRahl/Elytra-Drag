@@ -4,7 +4,9 @@ import net.bl4st.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public class ElytraDrag implements ModInitializer {
 
@@ -15,26 +17,30 @@ public class ElytraDrag implements ModInitializer {
 		ModConfig.LoadConfig();
 		ServerTickEvents.END_SERVER_TICK.register(this::ElytraDragTick);
 	}
-	private void ElytraDragTick(MinecraftServer server) {
-		var playerList  = server.getPlayerManager().getPlayerList();
-		if(playerList.isEmpty())
-			return;
 
-		for (ServerPlayerEntity spe : playerList)
+	/**
+	 * True while the entity is flying with elytras and holding the sneak key
+	 */
+	public static boolean IsDragging(LivingEntity entity)
+	{
+		return entity.isFallFlying() && entity.isShiftKeyDown();
+	}
+
+	private void ElytraDragTick(MinecraftServer server) {
+		for (ServerPlayer player : server.getPlayerList().getPlayers())
 		{
-			if(spe.isGliding() && spe.isSneaking())
+			if (!IsDragging(player))
+				continue;
+
+			Vec3 playerVelocity = player.getDeltaMovement();
+			double playerSpeed = playerVelocity.length() * 20.0;
+			if (playerSpeed > ModConfig.MINIMUM_SPEED)
 			{
-				spe.getJumpBoostVelocityModifier();
-				var playerVelocity = spe.getVelocity();
-				var playerSpeed = playerVelocity.length() * 20.0f;
-				if(playerSpeed > ModConfig.MINIMUM_SPEED)
-				{
-					var newVelocity = playerVelocity.multiply(1.0f - 0.05f * ModConfig.ELYTRA_DRAG);
-					spe.setVelocity(newVelocity);
-					spe.velocityModified = true;
-				}
-				LimitFallDistance(spe);
+				player.setDeltaMovement(playerVelocity.scale(1.0 - 0.05 * ModConfig.ELYTRA_DRAG));
+				// Sends the new velocity to the client, player movement is client authoritative
+				player.syncVelocity = true;
 			}
+			LimitFallDistance(player);
 		}
 	}
 
@@ -43,13 +49,11 @@ public class ElytraDrag implements ModInitializer {
 	 * makes the vertical speed requirement for
 	 * fallDistance reset easier to reach
 	 */
-	private void LimitFallDistance(ServerPlayerEntity player)
+	private void LimitFallDistance(ServerPlayer player)
 	{
-		if (player.getVelocity().getY() > -1.0f && player.fallDistance > 1.0f)
-			player.fallDistance = 1.0f;
-		else if(player.fallDistance > ModConfig.MAXIMUM_FALLDISTANCE)
-		{
+		if (player.getDeltaMovement().y > -1.0 && player.fallDistance > 1.0)
+			player.fallDistance = 1.0;
+		else if (player.fallDistance > ModConfig.MAXIMUM_FALLDISTANCE)
 			player.fallDistance = ModConfig.MAXIMUM_FALLDISTANCE;
-		}
 	}
 }
