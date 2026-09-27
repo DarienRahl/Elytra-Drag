@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "net.bl4st.elytradrag.mixin",
+	"package": "net.bl4st.elytradrag.client.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"mixins": [
-		"FireworkRocketEntitySuppressor"
+	"client": [
+		"ElytraDragAnimation"
 	],
 	"injectors": {
 		"defaultRequire": 1
