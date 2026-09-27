@@ -38,7 +38,7 @@ public class ElytraDrag implements ModInitializer {
 			{
 				player.setDeltaMovement(playerVelocity.scale(1.0 - 0.05 * ModConfig.ELYTRA_DRAG));
 				// Sends the new velocity to the client, player movement is client authoritative
-				player.hurtMarked = true;
+				player.syncVelocity = true;
 			}
 			LimitFallDistance(player);
 		}
