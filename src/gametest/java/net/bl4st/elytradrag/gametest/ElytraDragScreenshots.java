@@ -27,7 +27,7 @@ public class ElytraDragScreenshots implements FabricClientGameTest {
 		"item replace entity @a armor.chest with minecraft:elytra",
 		// an invisible platform to wait on while the chunks render
 		"setblock 0 " + (START_Y - 1) + " 0 minecraft:barrier",
-		"tp @a 0.5 " + START_Y + " 0.5 0 20",
+		"tp @a 0.5 " + START_Y + " 0.5 0 12",
 	};
 
 	/** Something to fly over: a pond and trees ahead (south) and behind (north). */
@@ -53,7 +53,8 @@ public class ElytraDragScreenshots implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
 		context.runOnClient(client -> {
-			client.options.fov().set(70);
+			// a narrow view: Steve fills more of the picture, the third person camera stays 4 blocks away
+			client.options.fov().set(50);
 			// flying fast widens the view; the pictures should not depend on the speed
 			client.options.fovEffectScale().set(0.0);
 			client.options.renderDistance().set(6);
