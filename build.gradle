@@ -31,6 +31,25 @@ loom {
 	}
 }
 
+// The README's pictures (CI): a client game test in src/gametest flies with an elytra in single player and takes
+// the game's pictures of the air brake (runClientGameTest, see .github/workflows/screenshots.yml).
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "elytra-drag-screenshots"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+		// the offline account of this name has Steve's default skin
+		username = "AirBrake"
+	}
+}
+
+tasks.matching { it.name == "runClientGameTest" }.configureEach {
+	// the network synchronizer of client game tests can fail on CI machines (Fabric's documentation)
+	jvmArgs "-Dfabric.client.gametest.disableNetworkSynchronizer=true"
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
