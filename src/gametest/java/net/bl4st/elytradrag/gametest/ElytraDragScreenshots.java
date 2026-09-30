@@ -84,8 +84,9 @@ public class ElytraDragScreenshots implements FabricClientGameTest {
 			server.runCommand("setblock 0 " + (START_Y - 1) + " 0 minecraft:air");
 			context.waitTicks(6);
 			for (int attempt = 0; attempt < 5 && !isGliding(context); attempt++) {
-				context.getInput().pressKey(options -> options.keyJump);
-				context.waitTicks(4);
+				// held for a moment: movement keys are read while they are down, a press is released too soon
+				context.getInput().holdKeyFor(options -> options.keyJump, 2);
+				context.waitTicks(3);
 			}
 			if (!isGliding(context)) {
 				throw new AssertionError("The elytra did not open");
