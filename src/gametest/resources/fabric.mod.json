@@ -1,0 +1,17 @@
+{
+	"schemaVersion": 1,
+	"id": "elytra-drag-screenshots",
+	"version": "1.0.0",
+	"name": "Elytra Drag screenshots",
+	"description": "CI only: flies with an elytra in single player and takes the README's pictures.",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"net.bl4st.elytradrag.gametest.ElytraDragScreenshots"
+		]
+	},
+	"depends": {
+		"elytra-drag": "*",
+		"fabric-api": "*"
+	}
+}

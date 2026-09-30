@@ -1,0 +1,76 @@
+# The README's pictures (docs/images/screenshots): a Fabric client game test (src/gametest) starts the real game under
+# a virtual display, flies with an elytra in single player (gliding, then holding Sneak) and takes the game's
+# pictures; .github/scripts/readme_images.py puts them together and they are committed to the branch.
+# Runs when the test or the pictures' script change, and from the Actions tab.
+
+name: screenshots
+on:
+  push:
+    paths:
+      - 'src/gametest/**'
+      - '.github/scripts/readme_images.py'
+      - '.github/workflows/screenshots.yml'
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Commit the new pictures to the branch
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: virtual display and software graphics (OpenGL and Vulkan)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils mesa-vulkan-drivers libvulkan1 > /dev/null
+          pip install --quiet pillow
+      - name: fly and take the pictures (client game test)
+        timeout-minutes: 30
+        run: |
+          chmod +x ./gradlew
+          status=0
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX" \
+            ./gradlew runClientGameTest --no-daemon --no-configuration-cache > game.log 2>&1 || status=$?
+          echo "::group::game log"
+          grep -vE "^\s+at |^\s*$" game.log | tail -n 150
+          echo "::endgroup::"
+          exit $status
+      - name: put the pictures together
+        run: python3 .github/scripts/readme_images.py build/run/clientGameTest/screenshots docs/images/screenshots
+      - name: upload pictures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: |
+            build/run/clientGameTest/screenshots/
+            docs/images/screenshots/
+            game.log
+      - name: commit the pictures
+        if: github.event_name == 'push' || inputs.commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/images/screenshots
+          if git diff --cached --quiet; then
+            echo "the pictures did not change"
+            exit 0
+          fi
+          version=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
+          git commit -m "Screenshots of Elytra Drag $version"
+          # the branch may have moved on while the game was running
+          git pull --rebase --autostash
+          git push
